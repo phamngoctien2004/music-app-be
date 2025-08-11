@@ -1,14 +1,32 @@
-# Use a base JDK image
-FROM eclipse-temurin:17-jdk-jammy as build
+# =============================================
+# STAGE 1: Build JAR từ mã nguồn
+# =============================================
+FROM maven:3.9-eclipse-temurin-17 AS build
 
-# Set work directory
 WORKDIR /app
 
-# Copy jar file (adjust the path and name if needed)
-COPY target/*.jar app.jar
+# Copy cấu hình Maven trước để cache dependencies
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
+RUN ./mvnw dependency:go-offline
 
-# Expose the port that your Spring Boot app uses
+# Copy toàn bộ mã nguồn
+COPY src ./src
+
+# Build ra jar
+RUN ./mvnw clean package -DskipTests
+
+# =============================================
+# STAGE 2: Chạy Spring Boot app
+# =============================================
+FROM eclipse-temurin:17-jdk-jammy
+
+WORKDIR /app
+
+# Copy file jar từ stage build
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
 
-# Command to run the jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
