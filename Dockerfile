@@ -5,26 +5,26 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# Copy cấu hình Maven trước để cache dependencies
+# Copy các file cấu hình trước để cache dependency
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
+RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline
 
-# Copy toàn bộ mã nguồn
+# Copy toàn bộ source vào container
 COPY src ./src
 
-# Build ra jar
+# Build project
 RUN ./mvnw clean package -DskipTests
 
 # =============================================
-# STAGE 2: Chạy Spring Boot app
+# STAGE 2: Chạy app từ jar đã build
 # =============================================
 FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
-# Copy file jar từ stage build
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
