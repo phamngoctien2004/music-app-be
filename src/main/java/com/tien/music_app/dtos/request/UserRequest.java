@@ -1,6 +1,7 @@
 package com.tien.music_app.dtos.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.tien.music_app.Enums.ERole;
 import com.tien.music_app.Enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -25,4 +26,6 @@ public class UserRequest {
     @JsonFormat(pattern = "MM/dd/yyyy")
     private LocalDate birth;
     private String avatar;
+    private ERole role;
+    private String password;
 }

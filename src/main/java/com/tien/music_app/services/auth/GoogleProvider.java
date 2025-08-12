@@ -3,18 +3,18 @@ package com.tien.music_app.services.auth;
 import com.tien.music_app.dtos.request.AuthRequest;
 import com.tien.music_app.dtos.request.GoogleRequest;
 import com.tien.music_app.dtos.response.AuthResponse;
+import com.tien.music_app.mappers.mapper.UserMapper;
+import com.tien.music_app.models.User;
 import com.tien.music_app.services.other.HttpService;
 import com.tien.music_app.services.user.UserService;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
-@Component
+@Service
 public class GoogleProvider implements AuthProvider, GoogleService{
     @Value("${spring.security.oauth2.resourceserver.jwt.secret-key}")
     public String secretKey;
@@ -41,17 +41,33 @@ public class GoogleProvider implements AuthProvider, GoogleService{
     }
     private final HttpService httpService;
     private final UserService userService;
-    public GoogleProvider(HttpService httpService, UserService userService){
+    private final UserMapper userMapper;
+    private final TokenService tokenService;
+    public GoogleProvider(
+            HttpService httpService,
+            UserService userService,
+            UserMapper userMapper,
+            TokenService tokenService
+    ){
         this.httpService = httpService;
         this.userService = userService;
+        this.userMapper = userMapper;
+        this.tokenService = tokenService;
     }
     @Override
+    @Transactional
     public AuthResponse authenticate(AuthRequest request) {
         String accessToken = this.getAccessToken(request.getCode());
         AuthRequest authRequest = this.getRequestInfo(accessToken);
+        User user  = userService.findByEmail(authRequest.getEmail())
+                .orElse(userService.createUserFromOauth(authRequest));
 
-//      save db
-        return null;
+
+        return AuthResponse.builder()
+                .accessToken(tokenService.generate(user.getId().toString(), user.getRole().getCode(), 15))
+                .refreshToken(tokenService.generate(user.getId().toString(), user.getRole().getCode(), 15000))
+                .userResponse(userMapper.toResponse(user))
+                .build();
     }
 
     @Override

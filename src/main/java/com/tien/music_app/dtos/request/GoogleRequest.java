@@ -15,4 +15,5 @@ public class GoogleRequest {
     private String clientSecret;
     private String redirectUri;
     private String grantType;
+    private String access_token;
 }

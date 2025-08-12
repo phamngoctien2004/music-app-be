@@ -22,7 +22,7 @@ public class User {
     private String name;
     private String email;
     private String avatar;
-
+    private String password;
     @Enumerated(EnumType.STRING)
     private Gender gender;
 

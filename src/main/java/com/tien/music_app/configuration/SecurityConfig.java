@@ -26,8 +26,7 @@ public class SecurityConfig {
     private String secretKey;
 
     private final String[] WhiteList = {
-            "/login",
-            "/signup"
+            "/api/auth/**",
     };
 
     @Bean

@@ -35,7 +35,7 @@ public class HttpService {
         return restTemplate.postForEntity(
                 url,
                 httpEntity,
-                String.class
-        ).getBody();
+                GoogleRequest.class
+        ).getBody().getAccess_token();
     }
 }

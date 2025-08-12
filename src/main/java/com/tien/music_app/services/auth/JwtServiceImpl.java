@@ -1,10 +1,12 @@
 package com.tien.music_app.services.auth;
 
+import com.tien.music_app.Enums.ERole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +20,11 @@ public class JwtServiceImpl implements TokenService {
     @Value("${spring.security.oauth2.resourceserver.jwt.secret-key}")
     private String secretKey;
     @Override
-    public String generate(String username, String role, int expiration) {
+    public String generate(String id, ERole role, int expiration) {
         Instant now = Instant.now();
         Instant expiry = now.plus(expiration, ChronoUnit.MINUTES);
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(id)
                 .setIssuer("TIEN-DEV-JAVA")
                 .setAudience("localhost:8080")
                 .setIssuedAt(Date.from(now))
@@ -36,7 +38,7 @@ public class JwtServiceImpl implements TokenService {
     public String refresh(String refreshToken) {
         String subject = getClaims(refreshToken).getSubject();
         String role = getClaims(refreshToken).get("role", String.class);
-        return generate(subject, role, 5);
+        return generate(subject, ERole.valueOf(role), 15);
     }
 
     @Override

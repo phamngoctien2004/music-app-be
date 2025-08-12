@@ -1,6 +1,7 @@
 package com.tien.music_app.dtos.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.tien.music_app.Enums.ERole;
 import com.tien.music_app.Enums.Gender;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
@@ -19,5 +20,11 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class UserResponse {
-    String id;
+    private String id;
+    private String email;
+    private String name;
+    private Gender gender;
+    private LocalDate birth;
+    private String avatar;
+    private ERole role;
 }
