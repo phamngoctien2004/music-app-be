@@ -11,6 +11,7 @@ import com.tien.music_app.exceptions.ErrorCode;
 import com.tien.music_app.mappers.mapper.UserMapper;
 import com.tien.music_app.models.User;
 import com.tien.music_app.repository.UserRepository;
+import com.tien.music_app.services.auth.TokenService;
 import com.tien.music_app.services.role.RoleService;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +28,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
 
     @Override
     public Optional<User> findByEmail(String email) {
@@ -36,9 +38,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse findById(String id) {
         return userMapper.toResponse(
-                repository.findById(id)
+                repository.findById(UUID.fromString(id))
                         .orElseThrow(() -> new AppException(ErrorCode.USER_EXISTED))
         );
+    }
+
+    @Override
+    public UserResponse me(String token) {
+        String userId = tokenService.getClaims(token).getId();
+        return this.findById(userId);
     }
 
     //  create new user
@@ -60,7 +68,7 @@ public class UserServiceImpl implements UserService {
     //  update user info only
     @Override
     public UserResponse updateUser(UserRequest request) {
-        User oldUser = repository.findById(request.getId())
+        User oldUser = repository.findById(UUID.fromString(request.getId()))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         oldUser.setName(request.getName());
         oldUser.setBirth(request.getBirth());
@@ -93,7 +101,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String changePassword(ChangePasswordRequest request) {
-        User user = repository.findById(request.getId())
+        User user = repository.findById(UUID.fromString(request.getId()))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         return "Password changed successfully";
@@ -101,7 +109,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(String id) {
-        User oldUser = repository.findById(id)
+        User oldUser = repository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         repository.delete(oldUser);

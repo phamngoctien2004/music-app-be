@@ -12,7 +12,7 @@ public interface UserService {
 //  Search user
     Optional<User> findByEmail(String email);
     UserResponse findById(String id);
-
+    UserResponse me(String token);
 //  create & update
     UserResponse createUser(UserRequest user);
     UserResponse updateUser(UserRequest user);

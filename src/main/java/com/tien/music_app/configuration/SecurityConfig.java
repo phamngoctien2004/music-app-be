@@ -59,7 +59,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of("http://localhost:4200"));
+        cors.setAllowedOrigins(List.of("http://localhost:4200", "https://music-pochi.vercel.app"));
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         cors.addAllowedHeader("*");
         cors.setAllowCredentials(true);

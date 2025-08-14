@@ -5,4 +5,5 @@ import com.tien.music_app.dtos.response.AuthResponse;
 
 public interface AuthService {
     AuthResponse login(AuthRequest request);
+
 }

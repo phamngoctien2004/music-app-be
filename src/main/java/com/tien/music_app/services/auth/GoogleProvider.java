@@ -3,15 +3,21 @@ package com.tien.music_app.services.auth;
 import com.tien.music_app.dtos.request.AuthRequest;
 import com.tien.music_app.dtos.request.GoogleRequest;
 import com.tien.music_app.dtos.response.AuthResponse;
+import com.tien.music_app.exceptions.AppException;
+import com.tien.music_app.exceptions.ErrorCode;
 import com.tien.music_app.mappers.mapper.UserMapper;
 import com.tien.music_app.models.User;
 import com.tien.music_app.services.other.HttpService;
 import com.tien.music_app.services.user.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Service
@@ -43,32 +49,41 @@ public class GoogleProvider implements AuthProvider, GoogleService{
     private final UserService userService;
     private final UserMapper userMapper;
     private final TokenService tokenService;
+    private final RedisTemplate<String, Object> redisTemplate;
     public GoogleProvider(
             HttpService httpService,
             UserService userService,
             UserMapper userMapper,
-            TokenService tokenService
+            TokenService tokenService,
+            RedisTemplate<String, Object> redisTemplate
     ){
         this.httpService = httpService;
         this.userService = userService;
         this.userMapper = userMapper;
         this.tokenService = tokenService;
+        this.redisTemplate = redisTemplate;
     }
     @Override
     @Transactional
     public AuthResponse authenticate(AuthRequest request) {
-        String accessToken = this.getAccessToken(request.getCode());
+        String code = URLDecoder.decode(request.getCode(),StandardCharsets.UTF_8);
+        Object codeIsNull = redisTemplate.opsForValue().get("google:code:" + code);
+        if(codeIsNull == null){
+            throw new AppException(ErrorCode.AUTH_FAILED);
+        }
+        String accessToken = this.getAccessToken(code);
         AuthRequest authRequest = this.getRequestInfo(accessToken);
         User user  = userService.findByEmail(authRequest.getEmail())
                 .orElse(userService.createUserFromOauth(authRequest));
 
-
-        return AuthResponse.builder()
+        return  AuthResponse.builder()
                 .accessToken(tokenService.generate(user.getId().toString(), user.getRole().getCode(), 15))
                 .refreshToken(tokenService.generate(user.getId().toString(), user.getRole().getCode(), 15000))
                 .userResponse(userMapper.toResponse(user))
                 .build();
     }
+
+
 
     @Override
     public String getLink() {
@@ -83,6 +98,11 @@ public class GoogleProvider implements AuthProvider, GoogleService{
                 .queryParam("prompt", "consent")
                 .build()
                 .toUriString();
+    }
+
+    @Override
+    public void handleCallback(String code) {
+        redisTemplate.opsForValue().set("google:code:" + code, code);
     }
 
     public AuthRequest getRequestInfo(String accessToken) {
